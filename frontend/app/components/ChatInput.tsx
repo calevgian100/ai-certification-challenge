@@ -7,6 +7,8 @@ interface ChatInputProps {
   disabled?: boolean;
   ragEnabled?: boolean;
   onRagToggle?: (enabled: boolean) => void;
+  agentEnabled?: boolean;
+  onAgentToggle?: (enabled: boolean) => void;
   hasUploadedPdf?: boolean;
 }
 
@@ -16,6 +18,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false, 
   ragEnabled = false, 
   onRagToggle,
+  agentEnabled = false,
+  onAgentToggle,
   hasUploadedPdf = false 
 }) => {
   const [message, setMessage] = useState('');
@@ -37,25 +41,64 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div className="border-t border-gray-700 p-4">
-      {onRagToggle && (
+      {(onRagToggle || onAgentToggle) && (
         <div className="flex items-center mb-2 text-sm">
-          <label className="flex items-center cursor-pointer">
-            <div className="relative">
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={ragEnabled}
-                onChange={(e) => onRagToggle(e.target.checked)}
-                // Allow toggling even without PDF
-              />
-              <div className={`block w-10 h-6 rounded-full ${ragEnabled ? 'bg-neonGreen' : 'bg-gray-600'}`}></div>
-              <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${ragEnabled ? 'transform translate-x-4' : ''}`}></div>
-            </div>
-            <div className="flex items-center ml-3">
-              <DocumentTextIcon className={`h-4 w-4 mr-1 ${ragEnabled ? 'text-neonGreen' : 'text-gray-400'}`} />
-              <span className={ragEnabled ? 'text-neonGreen font-bold' : 'text-gray-400'}>RAG Mode {ragEnabled ? 'On' : 'Off'}</span>
-            </div>
-          </label>
+          <span className="text-gray-400 mr-3">Mode:</span>
+          <div className="flex space-x-2">
+            {/* Chat Mode */}
+            <button
+              onClick={() => {
+                if (onRagToggle) onRagToggle(false);
+                if (onAgentToggle) onAgentToggle(false);
+              }}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                !ragEnabled && !agentEnabled
+                  ? 'bg-neonGreen text-black'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              💬 Chat
+            </button>
+            
+            {/* RAG Mode */}
+            {onRagToggle && (
+              <button
+                onClick={() => {
+                  onRagToggle(true);
+                  if (onAgentToggle) onAgentToggle(false);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  ragEnabled && !agentEnabled
+                    ? 'bg-neonGreen text-black'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                📚 RAG
+              </button>
+            )}
+            
+            {/* Agent Mode */}
+            {onAgentToggle && (
+              <button
+                onClick={() => {
+                  onAgentToggle(true);
+                  if (onRagToggle) onRagToggle(false);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  agentEnabled
+                    ? 'bg-neonGreen text-black'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                🔬 Agent
+              </button>
+            )}
+          </div>
+          
+          {/* Mode description */}
+          <div className="ml-4 text-xs text-gray-500">
+            {agentEnabled ? 'PubMed + Local Docs' : ragEnabled ? 'Local Documents' : 'Standard Chat'}
+          </div>
         </div>
       )}
       <div className="flex items-center space-x-2">

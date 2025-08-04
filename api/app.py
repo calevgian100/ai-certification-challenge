@@ -20,6 +20,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api.features.processors.document_processor import DocumentProcessor
 from api.features.processors.local_document_manager import LocalDocumentManager
 from api.features.rag.rag import RAGQueryEngine
+from api.features.agents.agent_endpoints import router as agent_router
 
 # Initialize FastAPI application with a title
 app = FastAPI(title="WODWise with RAG")
@@ -32,6 +33,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+# Include agent router
+app.include_router(agent_router)
 
 # Define a constant for processing status tracking
 processing_status = {}

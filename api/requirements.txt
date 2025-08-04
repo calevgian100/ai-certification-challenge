@@ -4,6 +4,13 @@ openai==1.77.0
 pydantic==2.11.4
 python-multipart==0.0.18
 qdrant-client==1.7.0
-nump>=5.5.5.5
+numpy>=1.24.0
 PyPDF2==3.0.1
 python-dotenv>=1.0.0
+langchain>=0.1.0
+langchain-openai>=0.1.0
+langchain-community>=0.0.20
+langgraph>=0.0.40
+langsmith>=0.1.0
+biopython>=1.83
+requests>=2.31.0

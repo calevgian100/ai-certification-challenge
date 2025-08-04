@@ -31,6 +31,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [ragEnabled, setRagEnabled] = useState(false);
+  const [agentEnabled, setAgentEnabled] = useState(false);
   const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -143,21 +144,28 @@ export default function Home() {
     // Get the selected trainer persona
     const developerMessage = selectedTrainer ? trainerPersonas[selectedTrainer].message : basePersona;
     
-    if (ragEnabled) {
+    if (agentEnabled) {
+      console.log('Agent mode enabled, using PubMed agent endpoint');
+    } else if (ragEnabled) {
       console.log('RAG mode enabled, using RAG query endpoint');
     }
 
     try {
-      // Use different endpoints based on RAG mode
-      const endpoint = ragEnabled ? '/api/rag-stream' : '/api/chat';
-      console.log(`Using endpoint: ${endpoint} with RAG mode: ${ragEnabled}`);
+      // Use different endpoints based on mode
+      const endpoint = agentEnabled ? '/api/agents/query' : (ragEnabled ? '/api/rag-stream' : '/api/chat');
+      console.log(`Using endpoint: ${endpoint} with Agent mode: ${agentEnabled}, RAG mode: ${ragEnabled}`);
       
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(ragEnabled ? {
+        body: JSON.stringify(agentEnabled ? {
+          // Agent endpoint format
+          query: userMessage,
+          thread_id: `user_${Date.now()}`,
+          user_profile: selectedTrainer ? trainerPersonas[selectedTrainer].name : undefined,
+        } : ragEnabled ? {
           // RAG endpoint format
           query: userMessage,
           system_prompt: developerMessage,
@@ -179,6 +187,46 @@ export default function Home() {
       // Initialize empty assistant message and sources for both modes
       let assistantMessage = '';
       let messageSources: any[] = [];
+      
+      // Handle agent mode differently (non-streaming JSON response)
+      if (agentEnabled) {
+        const agentResponse = await response.json();
+        console.log('Agent response:', agentResponse);
+        
+        // Extract response and sources from agent
+        assistantMessage = agentResponse.response || 'No response from agent';
+        
+        // Combine PubMed and local sources
+        const pubmedSources = agentResponse.pubmed_sources || [];
+        const localSources = agentResponse.local_sources || [];
+        
+        // Format sources for display
+        messageSources = [
+          ...pubmedSources.map((source: any) => ({
+            text: source.abstract || source.title || '',
+            source: `PubMed: ${source.title} (${source.year})`,
+            score: 1.0 // PubMed sources don't have scores
+          })),
+          ...localSources.map((source: any) => ({
+            text: source.content || '',
+            source: source.source || 'Local Document',
+            score: source.relevance_score || 0.0
+          }))
+        ];
+        
+        // Add the complete message
+        setMessages((prev) => {
+          const newMessage: Message = { 
+            role: 'assistant', 
+            content: assistantMessage,
+            sources: messageSources
+          };
+          return [...prev, newMessage];
+        });
+        
+        setIsLoading(false);
+        return;
+      }
       
       // Add an empty assistant message that will be updated with streaming content
       setMessages((prev) => {
@@ -424,6 +472,8 @@ export default function Home() {
             isLoading={isLoading}
             ragEnabled={ragEnabled}
             onRagToggle={setRagEnabled}
+            agentEnabled={agentEnabled}
+            onAgentToggle={setAgentEnabled}
             hasUploadedPdf={uploadedFileId !== null}
           />
         </div>
