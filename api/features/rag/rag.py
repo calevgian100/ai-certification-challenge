@@ -51,7 +51,7 @@ class RAGQueryEngine:
         
         # Create messages for the chat model
         messages = [
-            SystemRolePrompt(system_prompt or self.DEFAULT_SYSTEM_PROMPT).create_message(),
+            SystemRolePrompt(system_prompt or DEFAULT_SYSTEM_PROMPT).create_message(),
             UserRolePrompt(
                 f"Context:\n{context}\n\nQuestion: {query}\n\nAnswer:"
             ).create_message()
@@ -63,7 +63,7 @@ class RAGQueryEngine:
         # Extract sources
         sources = [{
             "text": result["text"],
-            "source": result["metadata"].get("source", "Unknown"),
+            "source": result.get("source", "Unknown"),
             "score": result["score"]
         } for result in search_results]
         
@@ -88,7 +88,7 @@ class RAGQueryEngine:
         
         # Create messages for the chat model
         messages = [
-            SystemRolePrompt(system_prompt or self.DEFAULT_SYSTEM_PROMPT).create_message(),
+            SystemRolePrompt(system_prompt or DEFAULT_SYSTEM_PROMPT).create_message(),
             UserRolePrompt(
                 f"Context:\n{context}\n\nQuestion: {query}\n\nAnswer:"
             ).create_message()
@@ -100,7 +100,7 @@ class RAGQueryEngine:
         # Extract sources
         sources = [{
             "text": result["text"],
-            "source": result["metadata"].get("source", "Unknown"),
+            "source": result.get("source", "Unknown"),
             "score": result["score"]
         } for result in search_results]
         
@@ -138,7 +138,7 @@ class RAGQueryEngine:
             return
         
         # Use the system prompt from the frontend or default
-        system_prompt = system_prompt or self.DEFAULT_SYSTEM_PROMPT
+        system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         
         # Add the persona reminder to the system prompt
         enhanced_system_prompt = system_prompt + PERSONA_REMINDER
@@ -165,7 +165,7 @@ class RAGQueryEngine:
         for i, result in enumerate(search_results):
             try:
                 text = result.get("text", "")
-                source = result.get("metadata", {}).get("source", "Unknown")
+                source = result.get("source", "Unknown")
                 formatted_results.append(CONTEXT_FORMAT.format(index=i+1, source=source, text=text))
             except Exception:
                 # Skip this result if there's an error
