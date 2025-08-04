@@ -1,8 +1,8 @@
 import os
 import uuid
 from typing import List, Dict, Any, Optional
-from api.features.store.qdrant_store import QdrantVectorStore
-from api.utils.text_utils import PDFLoader, CharacterTextSplitter
+from api.features.store.vector_store import QdrantVectorStore
+from api.utils.document_utils import PDFLoader, CharacterTextSplitter
 
 class DocumentProcessor:
     def __init__(self, 

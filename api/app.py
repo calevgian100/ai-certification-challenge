@@ -1,21 +1,17 @@
 # Import required FastAPI components for building the API
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 # Import Pydantic for data validation and settings management
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional
 import os
-import time
 import uuid
 import json
 import traceback
-import shutil
-import asyncio
 
 # Import RAG components - use relative imports to find modules in project root
 import sys
-import os
 
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -220,7 +216,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(
         original_filename = file.filename
         
         # Check if a file with the same name already exists in Qdrant
-        from api.features.store.qdrant_store import QdrantVectorStore
+        from api.features.store.vector_store import QdrantVectorStore
         vector_store = QdrantVectorStore()
         existing_pdfs = vector_store.get_all_pdf_metadata()
         
@@ -265,7 +261,7 @@ async def pdf_status(file_id: str):
         # If not found in processing_status, check if it exists in Qdrant
         # This handles cases where processing completed but status was lost
         # (e.g., after server restart)
-        from api.features.store.qdrant_store import QdrantVectorStore
+        from api.features.store.vector_store import QdrantVectorStore
         vector_store = QdrantVectorStore()
         existing_pdfs = vector_store.get_all_pdf_metadata()
         
@@ -299,7 +295,7 @@ async def list_pdfs():
         pdf_dict = {}
         
         # Get PDFs from Qdrant Cloud
-        from api.features.store.qdrant_store import QdrantVectorStore
+        from api.features.store.vector_store import QdrantVectorStore
         vector_store = QdrantVectorStore()
         qdrant_pdfs = vector_store.get_all_pdf_metadata()
         
@@ -617,7 +613,7 @@ async def delete_pdf(file_id: str):
         print(f"DEBUG: Deleting PDF with file_id: {file_id}")
         
         # First check if this PDF exists in our list
-        from api.features.store.qdrant_store import QdrantVectorStore
+        from api.features.store.vector_store import QdrantVectorStore
         vector_store = QdrantVectorStore()
         
         # Get all PDFs to check if this one exists

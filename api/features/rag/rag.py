@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from api.features.store.qdrant_store import QdrantVectorStore
+from api.features.store.vector_store import QdrantVectorStore
 from api.domain.chatmodel import ChatOpenAI
 from api.domain.prompts import SystemRolePrompt, UserRolePrompt
 
