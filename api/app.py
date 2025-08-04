@@ -18,6 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Now import the modules
 from api.features.processors.document_processor import DocumentProcessor
+from api.features.processors.local_document_manager import LocalDocumentManager
 from api.features.rag.rag import RAGQueryEngine
 
 # Initialize FastAPI application with a title
@@ -71,9 +72,24 @@ DEFAULT_API_KEY = load_api_key()
 # Set the OpenAI API key as an environment variable
 os.environ["OPENAI_API_KEY"] = DEFAULT_API_KEY
 
-# Initialize document processor and RAG query engine
+# Initialize document processor, local document manager, and RAG query engine
 document_processor = DocumentProcessor()
+local_doc_manager = LocalDocumentManager()
 rag_engine = RAGQueryEngine()
+
+# Automatically index local PDFs on startup
+print("Starting up: Indexing local PDFs...")
+try:
+    results = local_doc_manager.index_all_local_pdfs()
+    print(f"Startup indexing complete. Processed {len(results)} local PDFs.")
+    for result in results:
+        status = result.get('status', 'indexed')
+        filename = result.get('filename', 'unknown')
+        num_chunks = result.get('num_chunks', 0)
+        print(f"  - {filename}: {status} ({num_chunks} chunks)")
+except Exception as e:
+    print(f"Error during startup PDF indexing: {e}")
+
 
 # Define the data model for chat requests using Pydantic
 class ChatRequest(BaseModel):
@@ -95,6 +111,8 @@ class ProcessingStatus(BaseModel):
     file_id: Optional[str] = None
     filename: Optional[str] = None
     num_chunks: Optional[int] = None
+
+
 
 # Function to process PDF in the background
 async def process_pdf_background(file_content: bytes, file_id: str, original_filename: str):
@@ -294,25 +312,42 @@ async def list_pdfs():
         # Use a dictionary to track PDFs by file_id to prevent duplicates
         pdf_dict = {}
         
-        # Get PDFs from Qdrant Cloud
+        # Get PDFs from Qdrant (these are already indexed)
         from api.features.store.vector_store import QdrantVectorStore
         vector_store = QdrantVectorStore()
         qdrant_pdfs = vector_store.get_all_pdf_metadata()
         
-        if qdrant_pdfs:
-            # Ensure all PDFs have the required fields
-            for pdf in qdrant_pdfs:
-                # Make sure each PDF has a file_id
-                file_id = pdf.get("file_id")
-                if not file_id:
-                    continue
-                    
-                # Ensure all PDFs have the required fields with defaults if missing
+        # Add all PDFs from Qdrant (both uploaded and local that are indexed)
+        for pdf in qdrant_pdfs:
+            file_id = pdf.get("file_id")
+            if not file_id:
+                continue
+                
+            # Determine if it's local based on file_id prefix
+            is_local = file_id.startswith("local_")
+            source = "local" if is_local else "uploaded"
+            
+            pdf_dict[file_id] = {
+                "file_id": file_id,
+                "filename": pdf.get("filename", "Unknown PDF"),
+                "num_chunks": pdf.get("num_chunks", 0),
+                "status": "completed",  # If it's in Qdrant, it's completed
+                "source": source,
+                "is_local": is_local
+            }
+        
+        # Add any local PDFs that aren't indexed yet
+        local_pdfs = local_doc_manager.get_local_pdf_metadata()
+        for pdf in local_pdfs:
+            file_id = pdf.get("file_id")
+            if file_id and file_id not in pdf_dict:  # Only add if not already in Qdrant
                 pdf_dict[file_id] = {
                     "file_id": file_id,
                     "filename": pdf.get("filename", "Unknown PDF"),
-                    "num_chunks": pdf.get("num_chunks", 0),
-                    "status": "completed"  # If it's in Qdrant, it's completed
+                    "num_chunks": 0,  # Not indexed yet
+                    "status": "not_indexed",
+                    "source": "local",
+                    "is_local": True
                 }
         
         # Include any PDFs that are currently being processed but not yet in Qdrant
@@ -323,7 +358,9 @@ async def list_pdfs():
                     "file_id": file_id,
                     "filename": status_data.get("filename", "Processing PDF"),
                     "status": status_data.get("status", "processing"),
-                    "num_chunks": status_data.get("num_chunks", 0)
+                    "num_chunks": status_data.get("num_chunks", 0),
+                    "source": "uploaded",
+                    "is_local": False
                 }
         
         # Convert dictionary to list
@@ -475,6 +512,55 @@ async def rag_query(request: RAGRequest):
             "answer": "I encountered an error while processing your question. Please try again.",
             "sources": []
         }
+
+# Endpoint to manually index local PDFs
+@app.post("/api/index-local-pdfs")
+async def index_local_pdfs(force_reindex: bool = False):
+    """Manually trigger indexing of local PDFs"""
+    try:
+        print(f"Manual indexing triggered (force_reindex={force_reindex})")
+        results = local_doc_manager.index_all_local_pdfs(force_reindex=force_reindex)
+        
+        success_count = sum(1 for r in results if r.get('status') not in ['error', 'already_indexed'])
+        already_indexed_count = sum(1 for r in results if r.get('status') == 'already_indexed')
+        error_count = sum(1 for r in results if r.get('status') == 'error')
+        
+        return {
+            "success": True,
+            "message": f"Indexing complete. {success_count} indexed, {already_indexed_count} already indexed, {error_count} errors.",
+            "results": results,
+            "summary": {
+                "total": len(results),
+                "indexed": success_count,
+                "already_indexed": already_indexed_count,
+                "errors": error_count
+            }
+        }
+    except Exception as e:
+        print(f"Error during manual indexing: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Endpoint to get local PDF information
+@app.get("/api/local-pdfs")
+async def get_local_pdfs():
+    """Get information about local PDFs in the data directory"""
+    try:
+        local_pdfs = local_doc_manager.get_local_pdf_metadata()
+        
+        # Add indexing status for each PDF
+        for pdf in local_pdfs:
+            pdf["is_indexed"] = local_doc_manager.is_pdf_indexed(pdf["file_id"])
+        
+        return {
+            "success": True,
+            "local_pdfs": local_pdfs,
+            "count": len(local_pdfs)
+        }
+    except Exception as e:
+        print(f"Error getting local PDFs: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Define a health check endpoint to verify API status
 @app.get("/api/health")

@@ -22,8 +22,7 @@ PERSONA_REMINDER = "\n\nIMPORTANT: Maintain your trainer persona's expertise lev
 STREAM_COMPLETE_MARKER = "__STREAM_COMPLETE__"
 
 # Relevance Thresholds
-MIN_RELEVANCE_SCORE = 0.5
-
+MIN_RELEVANCE_SCORE = 0.25 
 # Context Formatting
 CONTEXT_FORMAT = "Document {index} (Source: {source}):\n{text}\n"
 
