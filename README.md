@@ -146,37 +146,6 @@ api/
 - **LangSmithConfig** - Observability and tracing
 - **RAGASSDGGenerator** - Synthetic data generation for evaluation
 
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **LangSmith traces not appearing**
-
-   - Ensure `langsmith_api_key` is in `env.yaml`
-   - Check server logs for LangSmith initialization messages
-
-2. **Qdrant connection errors**
-
-   - Verify `qdrant_url` and `qdrant_api_key` in `env.yaml`
-   - Ensure Qdrant Cloud instance is running
-
-3. **Enhanced RAG initialization fails**
-   - Check that PDF files exist in `api/data/` directory
-   - Verify OpenAI API key has sufficient credits
-
-### Debug Mode
-
-```bash
-# Run with debug logging
-uv run uvicorn api.app:app --reload --host 0.0.0.0 --port 8000 --log-level debug
-```
-
-## 📚 Documentation
-
-- **API Docs**: http://localhost:8000/docs (when running)
-- **RAGAS Evaluation**: See `api/evaluator/ragas_evaluation_results.json`
-- **LangSmith Traces**: https://smith.langchain.com/projects/crossfit-pubmed-agent
-
 ## 🎯 Next Steps
 
 1. **Improve Answer Relevancy** - Target 90%+ from current 85%
@@ -184,17 +153,107 @@ uv run uvicorn api.app:app --reload --host 0.0.0.0 --port 8000 --log-level debug
 3. **Query Classification** - Tailor responses to user expertise level
 4. **Performance Optimization** - Use LangSmith traces to identify bottlenecks
 
-## 🤝 Contributing
+## **AI Certification Challenge Responses**
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests: `uv run python -m pytest`
-5. Submit a pull request
+### **Task 1: Problem Definition**
 
-## 📄 License
+**Problem Statement:**
+Athletes recovering from injuries often receive static rehab plans that are hard to adapt to daily CrossFit training, leading to confusion, setbacks, or ineffective modifications.
 
-[Your License Here]
+**User Impact:**
+Based on my experience and interviews, CrossFit athletes are highly engaged, performance-driven individuals who thrive on dynamic, constantly varied training. When they're injured, they're often handed rigid rehab plans (typically in PDF form) that don't account for the complexity of daily WODs, movement substitutions, or how their body feels on a given day. This situation forces them to either skip workouts entirely or attempt unsafe modifications without proper guidance, risking re-injury or slowed recovery.
+
+This is especially frustrating because the athletes expect personalized, coach-like support. The inability to easily integrate their rehab plans into their ongoing training disrupts consistency and motivation.
+
+### **Task 2: Proposed Solution**
+
+**Solution Overview:**
+This solution enables users to upload their clinic history or rehab plan PDF directly into the app, allowing their selected AI trainer to instantly understand their injury, limitations, and prescribed recovery movements. Using Retrieval-Augmented Generation (RAG), the AI reads and interprets the document, then dynamically tailors daily workout suggestions, scaling options, and movement substitutions based on both the rehab plan and the user's current training goals. The experience is seamless, once the PDF is uploaded, users can simply ask questions like "What should I do today if I can't squat?" or "Can I still train my upper body while rehabbing my knee?" and receive intelligent, personalized responses.
+
+To the user, this feels like having a dedicated coach who not only remembers their injury but actively helps them train around it. Whether they're following a gym's programming or a custom track within the app, the AI trainer will continuously adjust recommendations to keep them progressing without compromising recovery. It bridges the gap between rehab and training, giving users confidence, clarity, and support throughout the healing process, without needing to interpret medical documents or guess what's safe and what is not.
+
+**Technology Stack:**
+
+- **LLM:** OpenAI GPT-4o-mini for intelligent synthesis and personalized responses
+- **Embedding Model:** OpenAI embeddings for semantic understanding
+- **Orchestration:** LangGraph for agentic workflow management
+- **Vector Database:** Qdrant for fast semantic search across knowledge base
+- **Monitoring:** LangSmith for production monitoring and optimization insights
+- **Evaluation:** RAGAS framework for comprehensive performance assessment
+- **User Interface:** FastAPI with web-based frontend
+
+**Agentic Reasoning:**
+The PubMedCrossFitAgent uses agentic reasoning for multi-source decision making, intelligently combining scientific research from PubMed with local CrossFit expertise, and providing context synthesis that merges scientific evidence with practical training guidance.
+
+### **Task 3: Data Sources & APIs**
+
+**External APIs:**
+
+- **PubMed:** Scientific validation and research-backed recommendations
+- **OpenAI:** Intelligent synthesis and personalized responses
+- **LangSmith:** Production monitoring and optimization insights
+
+**Data Sources:**
+
+- **Local PDFs:** Practical CrossFit techniques and coaching guidance
+- **Qdrant:** Fast semantic search across local knowledge base
+
+**Chunking Strategy:**
+RecursiveCharacterTextSplitter with 1000 character chunks and 200 character overlap. It removes headers, footers and tables of content and the overlap ensures exercise instructions aren't cut mid-sentence.
+
+### **Task 4: End-to-End Prototype**
+
+✅ **Completed:** Built and deployed locally using FastAPI with enhanced RAG capabilities and full LangSmith observability.
+
+### **Task 5: RAGAS Evaluation Results**
+
+| Metric                | Percentage | Performance |
+| --------------------- | ---------- | ----------- |
+| **Faithfulness**      | 95.8%      | Excellent   |
+| **Context Precision** | 94.4%      | Excellent   |
+| **Context Recall**    | 93.5%      | Very Good   |
+| **Answer Relevancy**  | 85.0%      | Good        |
+
+**Conclusion:** We can conclude that the system is retrieving high-quality, relevant content that enables accurate and faithful responses.
+
+### **Task 6: Advanced Retrieval**
+
+**Chosen Technique:** Ensemble retrieval (semantic + BM25) based on RAGAS evaluation showing 95.8% faithfulness and 94.4% context precision being the highest of them all.
+
+**Retrieval Techniques Assessed:**
+
+- **Semantic Retrieval:** Uses OpenAI embeddings for conceptual understanding
+- **BM25 Keyword Matching:** Provides exact keyword matching for specific exercise names
+- **Ensemble Retrieval:** Combines both approaches for optimal results
+- **Compression Retrieval:** Filters irrelevant content
+- **Multi-Query Retrieval:** Generates query variations
+- **Parent Document Retrieval:** Provides larger context windows
+
+**Implemented:** Ensemble retrieval (semantic + BM25) based on RAGAS evaluation showing 95.8% faithfulness and 94.4% context precision being the highest of them all.
+
+### **Task 7: Performance Assessment**
+
+**Improvement Results:**
+Before:
+
+| Metric                | Percentage | Performance |
+| --------------------- | ---------- | ----------- |
+| **Faithfulness**      | 74.4%      | Mid         |
+| **Context Precision** | 84.3%      | Excellent   |
+| **Context Recall**    | 100.0%     | Very Good   |
+| **Answer Relevancy**  | 93.3%      | Good        |
+
+After:
+
+| Metric                | Percentage | Performance |
+| --------------------- | ---------- | ----------- |
+| **Faithfulness**      | 95.8%      | Excellent   |
+| **Context Precision** | 94.4%      | Excellent   |
+| **Context Recall**    | 93.5%      | Very Good   |
+| **Answer Relevancy**  | 85.0%      | Good        |
+
+**Future Improvements:**
+Now, although we improved the faithfulness a lot, the answer relevancy has some room for improvement. I want to boost the Answer Relevancy from 85% to, at least, 90%+. Fine-tune prompt engineering to better align responses with user intent and Leverage LangSmith traces to identify slow queries and optimize retrieval speed.
 
 ---
 
