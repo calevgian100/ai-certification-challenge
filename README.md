@@ -58,6 +58,9 @@ qdrant_api_key: your_qdrant_api_key
 ```bash
 # Start the FastAPI server
 uv run uvicorn api.app:app --reload --host 0.0.0.0 --port 8000
+
+# Or in case that doesn't work do
+# uv run python app.py
 ```
 
 ### 5. Access the Application
