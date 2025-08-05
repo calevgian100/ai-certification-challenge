@@ -15,6 +15,7 @@ from langchain.storage import InMemoryStore
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain.schema import Document
+from langsmith import traceable
 
 # Local imports
 from api.features.store.vector_store import QdrantVectorStore
@@ -292,6 +293,7 @@ class EnhancedRAGQueryEngine:
                 print(f"❌ Fallback retriever also failed: {fallback_error}")
                 self.retriever = None
     
+    @traceable(name="enhanced_rag_query")
     def query(self, query: str, system_prompt: Optional[str] = None) -> Dict[str, Any]:
         """
         Query the enhanced RAG system
