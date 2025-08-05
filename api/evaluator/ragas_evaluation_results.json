@@ -1,0 +1,126 @@
+{
+  "faithfulness": 0.9583333333333334,
+  "answer_relevancy": 0.8495349170911326,
+  "context_precision": 0.9444444443722221,
+  "context_recall": 0.9351851851851851,
+  "individual_scores": [
+    {
+      "user_input": "Kwat es L5-S1 en el contexto de la salud del atleta?",
+      "retrieved_contexts": [
+        "Juan Dan  \n(PROTRUSION DISCAL L5-S1-ESTENOSIS LEVE IZQ). \nSI ALGUN EJERCICIO DUELE, NO SE HACE. \nNO ES OBLIGATORIO HACER TODOS LOS EJERCICIOS CADA DIA, ELEGIR 4-5 POR DIA. \nLOS PESOS, REPETICIONES, SERIES, TIEMPOS, ETC SON ORIENTATIVOS Y PUEDEN \nMODIFICARSE A TOLERANCIA INDIVIDUAL."
+      ],
+      "response": "L5-S1 se refiere a una protrusi\u00f3n discal en la regi\u00f3n lumbar, espec\u00edficamente entre las v\u00e9rtebras L5 y S1, que puede causar estenosis leve. En caso de que alg\u00fan ejercicio cause dolor, se recomienda no realizarlo, y no es obligatorio hacer todos los ejercicios cada d\u00eda, pudiendo elegir 4-5 por d\u00eda.",
+      "reference": "L5-S1 se refiere a una protrusi\u00f3n discal en la regi\u00f3n lumbar, espec\u00edficamente entre las v\u00e9rtebras L5 y S1, que puede causar estenosis leve. En caso de que alg\u00fan ejercicio cause dolor, se recomienda no realizarlo, y no es obligatorio hacer todos los ejercicios cada d\u00eda, pudiendo elegir 4-5 por d\u00eda.",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "user_input": "How can I use medicine ball in my training for better squats and what common mistakes should I avoid?",
+      "retrieved_contexts": [
+        "Receive the ball in a sound front squat\nCORRECTING\nCOMMON FAULTS\nSAME AS THE DEADLIFT AND SUMO DEADLIFT \nHIGH PULL, PLUS:\nLack of full hip extension in the drive\nCurling the ball\nCollapsing in the receiving position\nReceiving too high (i.e., power clean then \nsquat)\nNo pull-under (e.g., tossing the ball up)\nNot standing up before lowering the weight\nPROGRESSION (WITH MEDICINE BALL)\n1.\t Deadlift \n2.\t Deadlift-shrug, fast \n3.\t Front squat \n4.\t Pull-under \n5.\t Medicine-ball clean"
+      ],
+      "response": "You can use the medicine ball in your training by progressing through exercises such as deadlifts, deadlift-shrugs, front squats, pull-unders, and finally the medicine-ball clean. Common mistakes to avoid include lack of full hip extension in the drive, curling the ball, collapsing in the receiving position, receiving too high, not performing a pull-under, and not standing up before lowering the weight.",
+      "reference": "You can use the medicine ball in your training by progressing through exercises such as deadlifts, deadlift-shrugs, front squats, pull-unders, and finally the medicine-ball clean. Common mistakes to avoid include lack of full hip extension in the drive, curling the ball, collapsing in the receiving position, receiving too high, not performing a pull-under, and not standing up before lowering the weight.",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9416069101712229,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "user_input": "What a trainer need to do to help athletes with their movements?",
+      "retrieved_contexts": [
+        "the athlete\u2019s needs and capacity.\nTo teach functional movements, a trainer must first understand what defines proper mechanics and what may cause \npoor movement. A trainer must know ideal positions, but more frequently a trainer\u2019s job is to teach athletes how to \nimprove poor positions and movement patterns.\nKnowledge in fitness-related areas\nBeyond movement mechanics, trainers can also instruct clients in other areas that may improve their fitness. Greater \nknowledge in any field that overlaps with fitness\u2014such as anatomy and physiology, nutrition, or even expertise in"
+      ],
+      "response": "A trainer must first understand what defines proper mechanics and what may cause poor movement. Their job is to teach athletes how to improve poor positions and movement patterns.",
+      "reference": "A trainer must first understand what defines proper mechanics and what may cause poor movement. Their job is to teach athletes how to improve poor positions and movement patterns.",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9618928493988386,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "user_input": "How does the concept of triaging in medicine relate to coaching movement in strength training?",
+      "retrieved_contexts": [
+        "faults. The term \u201ctriaging\u201d is most often used in medicine to assign urgency to those needing medical attention. \nTriaging when coaching movement means assigning urgency to the multiple faults present in order of the most to \nleast important. Greater importance is assigned to faults that have the highest risk for injury (and, therefore, also the \ngreatest potential to limit performance). In a loaded environment, there are many cases in which the fault to address \nfirst would be loss of a neutral spine, usually in flexion. However, a flexed lumbar curve at depth in an air squat is less \nconcerning than that same position in a loaded back squat. This athlete needs to continue to air squat to full depth, \nfighting for a neutral midline, all while maintaining the range of motion required by life. It is precisely the practice of \nthe movement, even with less-than-ideal mechanics, that will eventually allow him or her to reclaim positions that"
+      ],
+      "response": "In coaching movement, triaging refers to assigning urgency to the multiple faults present, similar to its use in medicine for determining who needs medical attention first. It emphasizes addressing faults with the highest risk for injury first, which can also limit performance. For instance, in a loaded environment, the most critical fault to address might be the loss of a neutral spine, particularly in flexion. However, a flexed lumbar curve during an air squat is less concerning than in a loaded back squat, indicating that the athlete should continue practicing the air squat to full depth while striving for a neutral midline.",
+      "reference": "In coaching movement, triaging refers to assigning urgency to the multiple faults present, similar to its use in medicine for determining who needs medical attention first. It emphasizes addressing faults with the highest risk for injury first, which can also limit performance. For instance, in a loaded environment, the most critical fault to address might be the loss of a neutral spine, particularly in flexion. However, a flexed lumbar curve during an air squat is less concerning than in a loaded back squat, indicating that the athlete should continue practicing the air squat to full depth while striving for a neutral midline.",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.938989289579605,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "user_input": "How can the concept of triaging in medicine be applied to correcting common faults in front squat techniques using a medicine ball?",
+      "retrieved_contexts": [
+        "<1-hop>\n\nReceive the ball in a sound front squat\nCORRECTING\nCOMMON FAULTS\nSAME AS THE DEADLIFT AND SUMO DEADLIFT \nHIGH PULL, PLUS:\nLack of full hip extension in the drive\nCurling the ball\nCollapsing in the receiving position\nReceiving too high (i.e., power clean then \nsquat)\nNo pull-under (e.g., tossing the ball up)\nNot standing up before lowering the weight\nPROGRESSION (WITH MEDICINE BALL)\n1.\t Deadlift \n2.\t Deadlift-shrug, fast \n3.\t Front squat \n4.\t Pull-under \n5.\t Medicine-ball clean",
+        "<2-hop>\n\nfaults. The term \u201ctriaging\u201d is most often used in medicine to assign urgency to those needing medical attention. \nTriaging when coaching movement means assigning urgency to the multiple faults present in order of the most to \nleast important. Greater importance is assigned to faults that have the highest risk for injury (and, therefore, also the \ngreatest potential to limit performance). In a loaded environment, there are many cases in which the fault to address \nfirst would be loss of a neutral spine, usually in flexion. However, a flexed lumbar curve at depth in an air squat is less \nconcerning than that same position in a loaded back squat. This athlete needs to continue to air squat to full depth, \nfighting for a neutral midline, all while maintaining the range of motion required by life. It is precisely the practice of \nthe movement, even with less-than-ideal mechanics, that will eventually allow him or her to reclaim positions that"
+      ],
+      "response": "The concept of triaging in medicine can be applied to correcting common faults in front squat techniques by assigning urgency to the faults present during the movement. For instance, when coaching, greater importance should be given to faults that pose the highest risk for injury, such as loss of a neutral spine. In the context of using a medicine ball, this means addressing faults like curling the ball or collapsing in the receiving position before less critical issues. By prioritizing these faults, trainers can enhance performance and safety during strength training.",
+      "reference": "The concept of triaging in medicine can be applied to correcting common faults in front squat techniques by assigning urgency to the faults present during the movement. For instance, when coaching, greater importance should be given to faults that pose the highest risk for injury, such as loss of a neutral spine. In the context of using a medicine ball, this means addressing faults like curling the ball or collapsing in the receiving position before less critical issues. By prioritizing these faults, trainers can enhance performance and safety during strength training.",
+      "faithfulness": 0.625,
+      "answer_relevancy": 0.9452880735283644,
+      "context_precision": 0.99999999995,
+      "context_recall": 0.75
+    },
+    {
+      "user_input": "What are the common faults in receiving a medicine ball during a front squat, and how does the concept of triaging relate to addressing these faults in a fitness context?",
+      "retrieved_contexts": [
+        "<1-hop>\n\nReceive the ball in a sound front squat\nCORRECTING\nCOMMON FAULTS\nSAME AS THE DEADLIFT AND SUMO DEADLIFT \nHIGH PULL, PLUS:\nLack of full hip extension in the drive\nCurling the ball\nCollapsing in the receiving position\nReceiving too high (i.e., power clean then \nsquat)\nNo pull-under (e.g., tossing the ball up)\nNot standing up before lowering the weight\nPROGRESSION (WITH MEDICINE BALL)\n1.\t Deadlift \n2.\t Deadlift-shrug, fast \n3.\t Front squat \n4.\t Pull-under \n5.\t Medicine-ball clean",
+        "<2-hop>\n\nfaults. The term \u201ctriaging\u201d is most often used in medicine to assign urgency to those needing medical attention. \nTriaging when coaching movement means assigning urgency to the multiple faults present in order of the most to \nleast important. Greater importance is assigned to faults that have the highest risk for injury (and, therefore, also the \ngreatest potential to limit performance). In a loaded environment, there are many cases in which the fault to address \nfirst would be loss of a neutral spine, usually in flexion. However, a flexed lumbar curve at depth in an air squat is less \nconcerning than that same position in a loaded back squat. This athlete needs to continue to air squat to full depth, \nfighting for a neutral midline, all while maintaining the range of motion required by life. It is precisely the practice of \nthe movement, even with less-than-ideal mechanics, that will eventually allow him or her to reclaim positions that"
+      ],
+      "response": "Common faults in receiving a medicine ball during a front squat include lack of full hip extension in the drive, curling the ball, collapsing in the receiving position, receiving too high, and not standing up before lowering the weight. The concept of triaging relates to addressing these faults by assigning urgency to them based on the risk of injury and their potential to limit performance. For instance, in a loaded environment, the most critical fault to address first would be the loss of a neutral spine, especially in a back squat, while maintaining the range of motion required by life.",
+      "reference": "Common faults in receiving a medicine ball during a front squat include lack of full hip extension in the drive, curling the ball, collapsing in the receiving position, receiving too high, and not standing up before lowering the weight. The concept of triaging relates to addressing these faults by assigning urgency to them based on the risk of injury and their potential to limit performance. For instance, in a loaded environment, the most critical fault to address first would be the loss of a neutral spine, especially in a back squat, while maintaining the range of motion required by life.",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9833776948611782,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    },
+    {
+      "user_input": "What common faults in squats can be triaged similarly to how urgency is assigned in medicine?",
+      "retrieved_contexts": [
+        "<1-hop>\n\nReceive the ball in a sound front squat\nCORRECTING\nCOMMON FAULTS\nSAME AS THE DEADLIFT AND SUMO DEADLIFT \nHIGH PULL, PLUS:\nLack of full hip extension in the drive\nCurling the ball\nCollapsing in the receiving position\nReceiving too high (i.e., power clean then \nsquat)\nNo pull-under (e.g., tossing the ball up)\nNot standing up before lowering the weight\nPROGRESSION (WITH MEDICINE BALL)\n1.\t Deadlift \n2.\t Deadlift-shrug, fast \n3.\t Front squat \n4.\t Pull-under \n5.\t Medicine-ball clean",
+        "<2-hop>\n\nfaults. The term \u201ctriaging\u201d is most often used in medicine to assign urgency to those needing medical attention. \nTriaging when coaching movement means assigning urgency to the multiple faults present in order of the most to \nleast important. Greater importance is assigned to faults that have the highest risk for injury (and, therefore, also the \ngreatest potential to limit performance). In a loaded environment, there are many cases in which the fault to address \nfirst would be loss of a neutral spine, usually in flexion. However, a flexed lumbar curve at depth in an air squat is less \nconcerning than that same position in a loaded back squat. This athlete needs to continue to air squat to full depth, \nfighting for a neutral midline, all while maintaining the range of motion required by life. It is precisely the practice of \nthe movement, even with less-than-ideal mechanics, that will eventually allow him or her to reclaim positions that"
+      ],
+      "response": "Common faults in squats that can be triaged similarly to how urgency is assigned in medicine include issues like loss of a neutral spine, which is critical to address first due to its high risk for injury. In a loaded environment, this fault is more concerning than in an air squat, where maintaining a neutral midline is essential for performance and safety.",
+      "reference": "Common faults in squats that can be triaged similarly to how urgency is assigned in medicine include issues like loss of a neutral spine, which is critical to address first due to its high risk for injury. In a loaded environment, this fault is more concerning than in an air squat, where maintaining a neutral midline is essential for performance and safety.",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9280759048523302,
+      "context_precision": 0.49999999995,
+      "context_recall": 1.0
+    },
+    {
+      "user_input": "What are the common faults in receiving a medicine ball during a front squat, and how does triaging relate to addressing these faults in strength training?",
+      "retrieved_contexts": [
+        "<1-hop>\n\nReceive the ball in a sound front squat\nCORRECTING\nCOMMON FAULTS\nSAME AS THE DEADLIFT AND SUMO DEADLIFT \nHIGH PULL, PLUS:\nLack of full hip extension in the drive\nCurling the ball\nCollapsing in the receiving position\nReceiving too high (i.e., power clean then \nsquat)\nNo pull-under (e.g., tossing the ball up)\nNot standing up before lowering the weight\nPROGRESSION (WITH MEDICINE BALL)\n1.\t Deadlift \n2.\t Deadlift-shrug, fast \n3.\t Front squat \n4.\t Pull-under \n5.\t Medicine-ball clean",
+        "<2-hop>\n\nfaults. The term \u201ctriaging\u201d is most often used in medicine to assign urgency to those needing medical attention. \nTriaging when coaching movement means assigning urgency to the multiple faults present in order of the most to \nleast important. Greater importance is assigned to faults that have the highest risk for injury (and, therefore, also the \ngreatest potential to limit performance). In a loaded environment, there are many cases in which the fault to address \nfirst would be loss of a neutral spine, usually in flexion. However, a flexed lumbar curve at depth in an air squat is less \nconcerning than that same position in a loaded back squat. This athlete needs to continue to air squat to full depth, \nfighting for a neutral midline, all while maintaining the range of motion required by life. It is precisely the practice of \nthe movement, even with less-than-ideal mechanics, that will eventually allow him or her to reclaim positions that"
+      ],
+      "response": "Common faults in receiving a medicine ball during a front squat include lack of full hip extension in the drive, curling the ball, collapsing in the receiving position, receiving too high, and not standing up before lowering the weight. Triaging in coaching movement involves assigning urgency to these faults based on their risk for injury and potential to limit performance. For instance, in a loaded environment, the most critical fault to address first would be the loss of a neutral spine, especially in a back squat, while maintaining the range of motion required by life.",
+      "reference": "Common faults in receiving a medicine ball during a front squat include lack of full hip extension in the drive, curling the ball, collapsing in the receiving position, receiving too high, and not standing up before lowering the weight. Triaging in coaching movement involves assigning urgency to these faults based on their risk for injury and potential to limit performance. For instance, in a loaded environment, the most critical fault to address first would be the loss of a neutral spine, especially in a back squat, while maintaining the range of motion required by life.",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9659005354684537,
+      "context_precision": 0.99999999995,
+      "context_recall": 0.6666666666666666
+    },
+    {
+      "user_input": "What are the common faults in receiving a medicine ball during a front squat, and how does triaging relate to addressing these faults in a coaching context?",
+      "retrieved_contexts": [
+        "<1-hop>\n\nReceive the ball in a sound front squat\nCORRECTING\nCOMMON FAULTS\nSAME AS THE DEADLIFT AND SUMO DEADLIFT \nHIGH PULL, PLUS:\nLack of full hip extension in the drive\nCurling the ball\nCollapsing in the receiving position\nReceiving too high (i.e., power clean then \nsquat)\nNo pull-under (e.g., tossing the ball up)\nNot standing up before lowering the weight\nPROGRESSION (WITH MEDICINE BALL)\n1.\t Deadlift \n2.\t Deadlift-shrug, fast \n3.\t Front squat \n4.\t Pull-under \n5.\t Medicine-ball clean",
+        "<2-hop>\n\nfaults. The term \u201ctriaging\u201d is most often used in medicine to assign urgency to those needing medical attention. \nTriaging when coaching movement means assigning urgency to the multiple faults present in order of the most to \nleast important. Greater importance is assigned to faults that have the highest risk for injury (and, therefore, also the \ngreatest potential to limit performance). In a loaded environment, there are many cases in which the fault to address \nfirst would be loss of a neutral spine, usually in flexion. However, a flexed lumbar curve at depth in an air squat is less \nconcerning than that same position in a loaded back squat. This athlete needs to continue to air squat to full depth, \nfighting for a neutral midline, all while maintaining the range of motion required by life. It is precisely the practice of \nthe movement, even with less-than-ideal mechanics, that will eventually allow him or her to reclaim positions that"
+      ],
+      "response": "Common faults in receiving a medicine ball during a front squat include lack of full hip extension in the drive, curling the ball, collapsing in the receiving position, receiving too high, and not standing up before lowering the weight. Triaging in coaching movement means assigning urgency to these faults based on their risk for injury and potential to limit performance. For instance, in a loaded environment, the most critical fault to address first would be the loss of a neutral spine, especially in flexion, as this poses a higher risk compared to less concerning positions in an air squat.",
+      "reference": "Common faults in receiving a medicine ball during a front squat include lack of full hip extension in the drive, curling the ball, collapsing in the receiving position, receiving too high, and not standing up before lowering the weight. Triaging in coaching movement means assigning urgency to these faults based on their risk for injury and potential to limit performance. For instance, in a loaded environment, the most critical fault to address first would be the loss of a neutral spine, especially in flexion, as this poses a higher risk compared to less concerning positions in an air squat.",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9806829959601998,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    }
+  ],
+  "evaluation_metadata": {
+    "result_type": "<class 'ragas.dataset_schema.EvaluationResult'>",
+    "timestamp": "2025-08-04T23:16:47.664845",
+    "ragas_version": "0.2.10"
+  }
+}
