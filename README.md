@@ -178,12 +178,12 @@ To the user, this feels like having a dedicated coach who not only remembers the
 **Technology Stack:**
 
 - **LLM:** OpenAI GPT-4o-mini for intelligent synthesis and personalized responses
-- **Embedding Model:** OpenAI embeddings for semantic understanding
+- **Embedding Model:** text-embedding-3-small
 - **Orchestration:** LangGraph for agentic workflow management
 - **Vector Database:** Qdrant for fast semantic search across knowledge base
 - **Monitoring:** LangSmith for production monitoring and optimization insights
 - **Evaluation:** RAGAS framework for comprehensive performance assessment
-- **User Interface:** FastAPI with web-based frontend
+- **User Interface:** FastAPI with web-based frontend using Next.js
 
 **Agentic Reasoning:**
 The PubMedCrossFitAgent uses agentic reasoning for multi-source decision making, intelligently combining scientific research from PubMed with local CrossFit expertise, and providing context synthesis that merges scientific evidence with practical training guidance.
@@ -198,7 +198,7 @@ The PubMedCrossFitAgent uses agentic reasoning for multi-source decision making,
 
 **Data Sources:**
 
-- **Local PDFs:** Practical CrossFit techniques and coaching guidance
+- **Local PDFs:** Clinic history of the athletes and other relevant pdfs
 - **Qdrant:** Fast semantic search across local knowledge base
 
 **Chunking Strategy:**
