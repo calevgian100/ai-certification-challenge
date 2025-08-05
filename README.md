@@ -24,7 +24,7 @@ An intelligent CrossFit coaching assistant powered by advanced Retrieval-Augment
 - [uv](https://github.com/astral-sh/uv) package manager
 - OpenAI API key
 - LangSmith API key (optional, for tracing)
-- Qdrant Cloud account (or local Qdrant instance)
+- Qdrant Cloud account url and API key
 
 ## 🚀 Local Deployment
 
