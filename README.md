@@ -260,7 +260,7 @@ Now, although we improved the faithfulness a lot, the answer relevancy has some 
 
 ---
 
-**[Loom Video Link HERE](https://www.loom.com/share/b08a09350f1e48f2b51e84a5b02ead9a?sid=ff77a487-98f0-4909-8fe1-be557566d537)**
+**https://www.loom.com/share/b08a09350f1e48f2b51e84a5b02ead9a?sid=ff77a487-98f0-4909-8fe1-be557566d537**
 
 👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
