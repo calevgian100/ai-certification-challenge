@@ -31,7 +31,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [ragEnabled, setRagEnabled] = useState(false);
-  const [agentEnabled, setAgentEnabled] = useState(false);
+  const [agentEnabled, setAgentEnabled] = useState(true);
   const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   

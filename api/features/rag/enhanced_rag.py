@@ -321,26 +321,47 @@ class EnhancedRAGQueryEngine:
                     "sources": []
                 }
             
-            # Format context
-            context = self._format_context(retrieved_docs)
+            # Format context with error handling
+            try:
+                context = self._format_context(retrieved_docs)
+            except Exception as context_error:
+                print(f"❌ Error formatting context: {context_error}")
+                # Fallback: process documents individually
+                context_parts = []
+                for i, doc in enumerate(retrieved_docs):
+                    try:
+                        text = doc.page_content
+                        source = doc.metadata.get("source", "Unknown") if hasattr(doc, 'metadata') else "Unknown"
+                        context_parts.append(f"Document {i+1} (Source: {source}):\n{text}\n")
+                    except Exception:
+                        continue
+                context = "\n".join(context_parts)
             
-            # Create messages
+            # Create messages - escape curly braces to prevent format string issues
+            escaped_context = context.replace("{", "{{").replace("}", "}}")
+            
             messages = [
                 SystemRolePrompt(system_prompt or DEFAULT_SYSTEM_PROMPT).create_message(),
                 UserRolePrompt(
-                    f"Context:\n{context}\n\nQuestion: {query}\n\nAnswer:"
+                    f"Context:\n{escaped_context}\n\nQuestion: {query}\n\nAnswer:"
                 ).create_message()
             ]
             
             # Get response
             response = self.chat_model.run(messages)
             
-            # Extract sources
-            sources = [{
-                "text": doc.page_content,
-                "source": doc.metadata.get("source", "Unknown"),
-                "score": getattr(doc, 'score', 1.0)
-            } for doc in retrieved_docs]
+            # Extract sources with error handling
+            sources = []
+            for doc in retrieved_docs:
+                try:
+                    source_info = {
+                        "text": doc.page_content,
+                        "source": doc.metadata.get("source", "Unknown") if hasattr(doc, 'metadata') and doc.metadata else "Unknown",
+                        "score": getattr(doc, 'score', 1.0)
+                    }
+                    sources.append(source_info)
+                except Exception:
+                    continue
             
             return {
                 "answer": response,
@@ -348,7 +369,7 @@ class EnhancedRAGQueryEngine:
             }
             
         except Exception as e:
-            print(f"❌ Error in query: {e}")
+            print(f"❌ Error in Enhanced RAG query: {e}")
             return {
                 "answer": ERROR_RESPONSE,
                 "sources": []
