@@ -15,6 +15,7 @@ from langsmith import traceable
 
 # Local imports
 from api.features.rag.rag import RAGQueryEngine
+from api.features.rag.enhanced_rag import EnhancedRAGQueryEngine
 from api.features.store.vector_store import QdrantVectorStore
 from api.features.processors.local_document_manager import LocalDocumentManager
 
@@ -60,9 +61,18 @@ class PubMedCrossFitAgent:
             api_key=self.openai_api_key
         )
         
-        # Initialize RAG components
-        self.rag_engine = RAGQueryEngine()
+        # Initialize RAG components with enhanced retrieval
+        self.rag_engine = RAGQueryEngine()  # Keep original for backward compatibility
+        self.enhanced_rag_engine = EnhancedRAGQueryEngine(
+            retriever_type="ensemble",  # Best results from RAGAS evaluation
+            chunk_size=1000,
+            chunk_overlap=200,
+            k=5
+        )
         self.local_doc_manager = LocalDocumentManager()
+        
+        # Flag to track if enhanced RAG is initialized
+        self.enhanced_rag_initialized = False
         
         # Set up PubMed
         Entrez.email = email
@@ -151,11 +161,58 @@ class PubMedCrossFitAgent:
             print(f"PubMed search error: {e}")
             return []
     
-    def search_local_documents(self, query: str) -> List[Dict[str, Any]]:
-        """Search local documents and Qdrant vector store for relevant information"""
+    def initialize_enhanced_rag(self, data_path: str = "api/data") -> bool:
+        """Initialize enhanced RAG system with documents from specified path"""
         try:
-            # Use existing RAG engine
-            results = self.rag_engine.query(query)
+            print(f"🚀 Initializing Enhanced RAG system with path: {data_path}")
+            
+            # Check if path exists
+            if not os.path.exists(data_path):
+                print(f"❌ Data path does not exist: {data_path}")
+                return False
+            
+            # Load documents
+            success = self.enhanced_rag_engine.load_documents_from_directory(data_path)
+            
+            if success:
+                self.enhanced_rag_initialized = True
+                print("✅ Enhanced RAG system initialized successfully!")
+                info = self.enhanced_rag_engine.get_retriever_info()
+                print(f"📊 Retriever info: {info}")
+                
+                # Test that retriever is working
+                if self.enhanced_rag_engine.retriever is None:
+                    print("⚠️  Warning: Retriever is None after initialization")
+                    return False
+                else:
+                    print(f"✅ Retriever type: {type(self.enhanced_rag_engine.retriever).__name__}")
+                    
+            else:
+                print("❌ Failed to initialize Enhanced RAG system")
+                
+            return success
+            
+        except Exception as e:
+            print(f"❌ Error initializing Enhanced RAG: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def search_local_documents(self, query: str) -> List[Dict[str, Any]]:
+        """Search local documents using enhanced RAG if available, fallback to original RAG"""
+        try:
+            # Use enhanced RAG if initialized, otherwise fallback to original
+            if self.enhanced_rag_initialized:
+                print("🔍 Using Enhanced RAG for local document search...")
+                print(f"🔍 Query: {query}")
+                print(f"🔍 Retriever status: {self.enhanced_rag_engine.retriever is not None}")
+                print(f"🔍 Number of docs: {len(self.enhanced_rag_engine.docs)}")
+                
+                results = self.enhanced_rag_engine.query(query)
+                print(f"🔍 Enhanced RAG returned: {len(results.get('sources', []))} sources")
+            else:
+                print("🔍 Using original RAG for local document search...")
+                results = self.rag_engine.query(query)
             
             if results.get("sources"):
                 formatted_sources = []
@@ -461,6 +518,26 @@ class PubMedCrossFitAgent:
 
 
 # Convenience function for easy import
-def create_pubmed_agent(**kwargs) -> PubMedCrossFitAgent:
-    """Create a PubMed CrossFit Agent instance"""
-    return PubMedCrossFitAgent(**kwargs)
+def create_pubmed_agent(data_path: str = None, initialize_enhanced_rag: bool = True, **kwargs):
+    """Create a PubMed CrossFit Agent instance with optional enhanced RAG initialization"""
+    agent = PubMedCrossFitAgent(**kwargs)
+    
+    if initialize_enhanced_rag:
+        print("🔧 Setting up Enhanced RAG system...")
+        
+        # Auto-detect data path if not provided
+        if data_path is None:
+            # Try to find the data directory relative to this file
+            current_file = os.path.abspath(__file__)
+            # Go up from: api/features/agents/pub_med_agent.py -> api/data
+            api_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+            data_path = os.path.join(api_dir, "data")
+            print(f"📍 Auto-detected data path: {data_path}")
+        
+        success = agent.initialize_enhanced_rag(data_path)
+        if success:
+            print("🎉 Agent created with Enhanced RAG capabilities!")
+        else:
+            print("⚠️  Agent created but Enhanced RAG initialization failed. Using standard RAG.")
+    
+    return agent
