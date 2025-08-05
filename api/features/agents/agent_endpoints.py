@@ -3,8 +3,23 @@ from pydantic import BaseModel
 from typing import Dict, Any, Optional, List
 import asyncio
 import logging
+from langsmith import traceable
 
 from api.features.agents.pub_med_agent import PubMedCrossFitAgent, create_pubmed_agent
+from api.features.observability.langsmith_config import LangSmithConfig
+from api.features.agents.config import AgentConfig
+from api.utils.env_loader import load_env_vars
+
+# Load environment variables at module level to ensure LangSmith tracing works
+load_env_vars()
+import os
+langsmith_api_key = os.getenv("langsmith_api_key")
+if langsmith_api_key:
+    # Set LangSmith environment variables globally for @traceable decorators
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_API_KEY"] = langsmith_api_key
+    os.environ["LANGCHAIN_PROJECT"] = "crossfit-pubmed-agent"
+    os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +35,24 @@ def get_agent() -> PubMedCrossFitAgent:
     """Get or create the PubMed agent instance"""
     global _agent_instance
     if _agent_instance is None:
-        _agent_instance = create_pubmed_agent()
+        # Load environment variables from env.yaml first
+        load_env_vars()
+        
+        # Create config after environment variables are loaded
+        config = AgentConfig.from_env()
+        langsmith_api_key = config.langsmith_api_key
+        if langsmith_api_key:
+            langsmith_config = LangSmithConfig(
+                api_key=langsmith_api_key,
+                project_name="crossfit-pubmed-agent"
+            )
+            logger.info(f"✅ LangSmith initialized for FastAPI endpoints: {langsmith_config.project_name}")
+            
+
+        else:
+            logger.warning("⚠️ LangSmith API key not found - tracing will be disabled")
+        
+        _agent_instance = create_pubmed_agent(langsmith_api_key=langsmith_api_key)
     return _agent_instance
 
 # Request/Response models
@@ -47,6 +79,7 @@ class EducationRequest(BaseModel):
     query: Optional[str] = None
 
 @router.post("/query", response_model=AgentQueryResponse)
+@traceable(name="frontend_agent_query")
 async def query_agent(request: AgentQueryRequest):
     """
     Query the PubMed CrossFit Agent with a general question.
@@ -67,8 +100,8 @@ async def query_agent(request: AgentQueryRequest):
         if request.current_workout:
             enhanced_query += f" (Current workout: {request.current_workout})"
         
-        # Query the agent
-        result = await agent.aquery(enhanced_query, request.thread_id)
+        # Query the agent (using sync method in async context)
+        result = await asyncio.to_thread(agent.query, enhanced_query, request.thread_id)
         
         return AgentQueryResponse(
             response=result["response"],
@@ -86,6 +119,7 @@ async def query_agent(request: AgentQueryRequest):
         )
 
 @router.post("/workout-adaptation")
+@traceable(name="frontend_workout_adaptation")
 async def adapt_workout(request: WorkoutAdaptationRequest):
     """
     Get personalized workout adaptations based on user profile and scientific evidence.
@@ -118,6 +152,7 @@ async def adapt_workout(request: WorkoutAdaptationRequest):
         )
 
 @router.post("/education")
+@traceable(name="frontend_education")
 async def get_education(request: EducationRequest):
     """
     Get educational content about CrossFit, exercise science, or fitness topics.

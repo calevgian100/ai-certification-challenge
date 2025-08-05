@@ -13,6 +13,9 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langsmith import traceable
 
+# Import LangSmith configuration
+from api.features.observability.langsmith_config import LangSmithConfig, trace_agent_step
+
 # Local imports
 from api.features.rag.rag import RAGQueryEngine
 from api.features.rag.enhanced_rag import EnhancedRAGQueryEngine
@@ -49,10 +52,11 @@ class PubMedCrossFitAgent:
         self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
         self.langsmith_api_key = langsmith_api_key or os.getenv("langsmith_api_key")
         
-        if self.langsmith_api_key:
-            os.environ["LANGCHAIN_TRACING_V2"] = "true"
-            os.environ["LANGCHAIN_API_KEY"] = self.langsmith_api_key
-            os.environ["LANGCHAIN_PROJECT"] = "crossfit-pubmed-agent"
+        # Initialize LangSmith configuration
+        self.langsmith = LangSmithConfig(
+            api_key=self.langsmith_api_key,
+            project_name="crossfit-pubmed-agent"
+        )
         
         # Initialize LLM
         self.llm = ChatOpenAI(
@@ -80,6 +84,7 @@ class PubMedCrossFitAgent:
         # Build the graph
         self.graph = self._build_graph()
     
+    @traceable(name="search_pubmed")
     def search_pubmed(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         """Search PubMed for scientific articles related to CrossFit, exercise, and fitness"""
         try:
@@ -198,6 +203,7 @@ class PubMedCrossFitAgent:
             traceback.print_exc()
             return False
     
+    @traceable(name="search_local_documents")
     def search_local_documents(self, query: str) -> List[Dict[str, Any]]:
         """Search local documents using enhanced RAG if available, fallback to original RAG"""
         try:
@@ -468,11 +474,12 @@ class PubMedCrossFitAgent:
         state["messages"].append(HumanMessage(content=query))
         state["messages"].append(AIMessage(content=response.content))
         
-        return state
-    
-    @traceable
+    @traceable(name="pubmed_agent_query")
     def query(self, user_query: str, thread_id: str = "default") -> Dict[str, Any]:
         """Main entry point for querying the agent"""
+        import time
+        start_time = time.time()
+        
         try:
             # Create initial state
             initial_state = {
@@ -518,8 +525,11 @@ class PubMedCrossFitAgent:
 
 
 # Convenience function for easy import
-def create_pubmed_agent(data_path: str = None, initialize_enhanced_rag: bool = True, **kwargs):
+def create_pubmed_agent(data_path: str = None, initialize_enhanced_rag: bool = True, langsmith_api_key: str = None, **kwargs):
     """Create a PubMed CrossFit Agent instance with optional enhanced RAG initialization"""
+    # Pass the LangSmith API key explicitly to ensure tracing works
+    if langsmith_api_key:
+        kwargs['langsmith_api_key'] = langsmith_api_key
     agent = PubMedCrossFitAgent(**kwargs)
     
     if initialize_enhanced_rag:
