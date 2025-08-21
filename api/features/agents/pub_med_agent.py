@@ -38,6 +38,10 @@ class AgentState(TypedDict):
     workout_plan: Optional[Dict[str, Any]]
     educational_content: Optional[str]
     next_action: str
+    response: str
+    helpfulness_score: str
+    attempt_count: int
+    max_attempts: int
 
 
 class PubMedCrossFitAgent:
@@ -46,11 +50,15 @@ class PubMedCrossFitAgent:
     def __init__(self, 
                  openai_api_key: str = None,
                  langsmith_api_key: str = None,
-                 email: str = "user@example.com"):
+                 email: str = "user@example.com",
+                 max_attempts: int = 3):
         
         # Set up API keys
         self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
         self.langsmith_api_key = langsmith_api_key or os.getenv("langsmith_api_key")
+        
+        # Set maximum attempts for helpfulness refinement
+        self.max_attempts = max_attempts
         
         # Initialize LangSmith configuration
         self.langsmith = LangSmithConfig(
@@ -348,26 +356,45 @@ class PubMedCrossFitAgent:
             return f"Unable to generate educational content for {topic} at this time."
     
     def _build_graph(self) -> StateGraph:
-        """Build the LangGraph workflow"""
+        """Build the LangGraph workflow with helpfulness evaluation"""
         workflow = StateGraph(AgentState)
         
-        # Add nodes
+        # Add core nodes
         workflow.add_node("analyze_query", self._analyze_query)
         workflow.add_node("search_pubmed", self._search_pubmed_node)
         workflow.add_node("search_local", self._search_local_node)
         workflow.add_node("synthesize_information", self._synthesize_information)
         workflow.add_node("generate_response", self._generate_response)
         
+        # Add helpfulness evaluation nodes
+        workflow.add_node("evaluate_helpfulness", self._evaluate_helpfulness)
+        workflow.add_node("refine_response", self._refine_response)
+        workflow.add_node("finalize_response", self._finalize_response)
+        
         # Define the flow
         workflow.set_entry_point("analyze_query")
         
-        # workflow.add_edge("analyze_query", "search_pubmed")
-        # workflow.add_edge("search_pubmed", "search_local")
+        # Core workflow
         workflow.add_edge("analyze_query", "search_local")
         workflow.add_edge("search_local", "search_pubmed")
         workflow.add_edge("search_pubmed", "synthesize_information")
         workflow.add_edge("synthesize_information", "generate_response")
-        workflow.add_edge("generate_response", END)
+        workflow.add_edge("generate_response", "evaluate_helpfulness")
+        
+        # Helpfulness evaluation conditional routing
+        workflow.add_conditional_edges(
+            "evaluate_helpfulness",
+            self._route_based_on_helpfulness,
+            {
+                "end": "finalize_response",
+                "refine": "refine_response",
+                "max_attempts_reached": "finalize_response"
+            }
+        )
+        
+        # Complete the loop or end
+        workflow.add_edge("refine_response", "analyze_query")  # Loop back to start with refined query
+        workflow.add_edge("finalize_response", END)  # End the workflow
         
         # Compile the graph
         memory = MemorySaver()
@@ -474,44 +501,209 @@ class PubMedCrossFitAgent:
         state["messages"].append(HumanMessage(content=query))
         state["messages"].append(AIMessage(content=response.content))
         
+        # Store the response in state for helpfulness evaluation
+        state["response"] = response.content
+        
+        # Initialize helpfulness evaluation fields if not present
+        if "attempt_count" not in state:
+            state["attempt_count"] = 1
+        if "helpfulness_score" not in state:
+            state["helpfulness_score"] = ""
+        if "max_attempts" not in state:
+            state["max_attempts"] = self.max_attempts
+            
+        return state
+        
+    def _evaluate_helpfulness(self, state: AgentState) -> AgentState:
+        """Evaluate if the response is helpful"""
+        query = state["query"]
+        response = state["response"]
+        
+        # Create prompt for helpfulness evaluation
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", """
+            You are a helpfulness evaluator for CrossFit and fitness information.
+            Your job is to determine if the provided response adequately answers the user's query.
+            
+            Evaluate based on:
+            1. Relevance to the query
+            2. Accuracy of information
+            3. Completeness of the answer
+            4. Actionability of advice (if applicable)
+            5. Clarity and understandability
+            
+            Respond with ONLY "Y" if the response is helpful, or "N" if it is not helpful.
+            """),
+            ("human", f"""
+            User Query: {query}
+            
+            Response to Evaluate:
+            {response}
+            
+            Is this response helpful? (Y/N)
+            """)
+        ])
+        
+        # Get evaluation
+        evaluation = self.llm.invoke(prompt.format_messages())
+        helpfulness_score = evaluation.content.strip().upper()
+        
+        # Normalize to Y or N
+        if "Y" in helpfulness_score:
+            helpfulness_score = "Y"
+        else:
+            helpfulness_score = "N"
+        
+        # Update state
+        state["helpfulness_score"] = helpfulness_score
+        
+        # Add tracking info
+        print(f"🔍 Helpfulness evaluation: {helpfulness_score} (attempt {state['attempt_count']})")
+        
+        return state
+        
+    def _route_based_on_helpfulness(self, state: AgentState) -> str:
+        """Determine next step based on helpfulness score and attempt count"""
+        helpfulness_score = state["helpfulness_score"]
+        attempt_count = state["attempt_count"]
+        max_attempts = state["max_attempts"]
+        
+        # If helpful, route to end
+        if helpfulness_score == "Y":
+            return "end"
+        
+        # If max attempts reached, route to end
+        if attempt_count >= max_attempts:
+            return "max_attempts_reached"
+        
+        # Otherwise, route to refine
+        return "refine"
+        
+    def _refine_response(self, state: AgentState) -> AgentState:
+        """Refine the response based on the original query"""
+        query = state["query"]
+        previous_response = state["response"]
+        attempt_count = state["attempt_count"]
+        
+        # Create a refined query
+        refine_prompt = ChatPromptTemplate.from_messages([
+            ("system", """
+            You are an expert at refining queries to get better responses.
+            Your job is to analyze the original query and previous response,
+            then create an improved query that will yield a more helpful response.
+            
+            Focus on:
+            1. Adding specificity to ambiguous parts
+            2. Requesting more actionable information
+            3. Asking for missing details
+            4. Clarifying any misunderstandings
+            
+            Provide ONLY the refined query, nothing else.
+            """),
+            ("human", f"""
+            Original Query: {query}
+            
+            Previous Response (deemed not helpful):
+            {previous_response}
+            
+            Please provide a refined query:
+            """)
+        ])
+        
+        # Get refined query
+        refined_query_response = self.llm.invoke(refine_prompt.format_messages())
+        refined_query = refined_query_response.content.strip()
+        
+        # Update state with refined query and increment attempt count
+        state["query"] = refined_query
+        state["attempt_count"] = attempt_count + 1
+        
+        # Add refinement info to messages
+        state["messages"].append(SystemMessage(content=f"Refining query (attempt {attempt_count + 1}/{state['max_attempts']}): {refined_query}"))
+        
+        return state
+        
+    def _finalize_response(self, state: AgentState) -> AgentState:
+        """Finalize the response to be returned to the user"""
+        helpfulness_score = state["helpfulness_score"]
+        response = state["response"]
+        attempt_count = state["attempt_count"]
+        max_attempts = state["max_attempts"]
+        
+        # If max attempts reached but still not helpful, add a note
+        if helpfulness_score == "N" and attempt_count >= max_attempts:
+            final_response = f"""
+            {response}
+            
+            Note: I've made {attempt_count} attempts to provide the most helpful response possible.
+            If you need more specific information, please consider refining your question.
+            """
+            state["response"] = final_response
+            
+        return state
+    
     @traceable(name="pubmed_agent_query")
-    def query(self, user_query: str, thread_id: str = "default") -> Dict[str, Any]:
-        """Main entry point for querying the agent"""
+    def query(self, user_query: str, thread_id: str = "default", max_attempts: int = None) -> Dict[str, Any]:
+        """Main entry point for querying the agent with helpfulness evaluation"""
         import time
         start_time = time.time()
         
         try:
+            # Use provided max_attempts or default to instance value
+            if max_attempts is None:
+                max_attempts = self.max_attempts
+                
             # Create initial state
             initial_state = {
                 "query": user_query,
-                "messages": [],
                 "context": "",
                 "pubmed_results": [],
                 "local_rag_results": [],
                 "workout_plan": None,
                 "educational_content": None,
-                "next_action": ""
+                "next_action": "",
+                "messages": [],
+                "response": "",
+                "helpfulness_score": "",
+                "attempt_count": 1,
+                "max_attempts": max_attempts
             }
             
             # Run the graph
-            config = {"configurable": {"thread_id": thread_id}}
-            final_state = self.graph.invoke(initial_state, config)
+            graph = self._build_graph()
+            config = {"configurable": {"thread_id": "default"}}
+            final_state = graph.invoke(initial_state, config)
             
-            # Extract the response
-            if final_state["messages"]:
+            # Extract response - use the final response from the state
+            # which has been evaluated for helpfulness
+            response_content = final_state.get("response", "")
+            if not response_content and final_state["messages"]:
                 response_content = final_state["messages"][-1].content
-            else:
+            elif not response_content:
                 response_content = "I apologize, but I couldn't generate a response at this time."
             
+            # Include helpfulness information in the response
+            attempts_info = ""
+            
+            if final_state.get("attempt_count", 1) > 1:
+                attempts_info = f"\n\n(Response refined {final_state['attempt_count']-1} times for helpfulness)"
+            
+            execution_time = time.time() - start_time
+            print(f"Query processed in {execution_time:.2f} seconds with {final_state.get('attempt_count', 1)} attempts")
+            
             return {
-                "response": response_content,
+                "response": response_content + attempts_info,
                 "pubmed_sources": final_state["pubmed_results"],
                 "local_sources": final_state["local_rag_results"],
-                "context_used": final_state["context"]
+                "context_used": final_state["context"],
+                "helpfulness_score": final_state.get("helpfulness_score", ""),
+                "attempts": final_state.get("attempt_count", 1)
             }
             
         except Exception as e:
             print(f"Agent query error: {e}")
+            import traceback
+            traceback.print_exc()
             return {
                 "response": f"I encountered an error while processing your query: {str(e)}",
                 "pubmed_sources": [],
@@ -519,9 +711,9 @@ class PubMedCrossFitAgent:
                 "context_used": ""
             }
     
-    async def aquery(self, user_query: str, thread_id: str = "default") -> Dict[str, Any]:
+    async def aquery(self, user_query: str, thread_id: str = "default", max_attempts: int = None) -> Dict[str, Any]:
         """Async version of query method"""
-        return await asyncio.to_thread(self.query, user_query, thread_id)
+        return await asyncio.to_thread(self.query, user_query, thread_id, max_attempts)
 
 
 # Convenience function for easy import

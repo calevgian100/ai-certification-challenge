@@ -62,7 +62,7 @@ def main():
     if success_count == len(commands):
         print("✅ All dependencies installed successfully!")
         print("\n🎯 Next steps:")
-        print("1. Navigate to the api/evaluator directory")
+        print("1. Navigate to the api/features/evaluator directory")
         print("2. Run: python ragas_eval.py")
         print("3. The script will generate synthetic data for evaluation")
     else:

@@ -125,7 +125,7 @@ uv run python api/features/agents/test_enhanced_agent.py
 
 ```bash
 # Run RAGAS evaluation on synthetic dataset
-uv run python api/evaluator/ragas_eval.py
+uv run python api/evaluator/features/ragas_eval.py
 ```
 
 ## 📁 Project Structure
