@@ -3,13 +3,15 @@ import json
 import asyncio
 from typing import List, Dict, Any, Optional, TypedDict, Annotated
 from datetime import datetime
+import hashlib
+import time
 
 # LangChain and LangGraph imports
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, END, add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from langsmith import traceable
 
@@ -30,7 +32,7 @@ from xml.etree import ElementTree as ET
 
 class AgentState(TypedDict):
     """State for the PubMed CrossFit Agent"""
-    messages: Annotated[List, "Messages in the conversation"]
+    messages: Annotated[List, add_messages]
     query: str
     context: str
     pubmed_results: List[Dict[str, Any]]
@@ -42,6 +44,12 @@ class AgentState(TypedDict):
     helpfulness_score: str
     attempt_count: int
     max_attempts: int
+    context_quality_score: float
+    pubmed_quality_score: float
+    local_quality_score: float
+    local_confidence: float
+    cache_key: str
+    cache_hit: bool
 
 
 class PubMedCrossFitAgent:
@@ -88,6 +96,9 @@ class PubMedCrossFitAgent:
         
         # Set up PubMed
         Entrez.email = email
+        
+        # Initialize cache
+        self._cache = {}
         
         # Build the graph
         self.graph = self._build_graph()
@@ -360,45 +371,114 @@ class PubMedCrossFitAgent:
         workflow = StateGraph(AgentState)
         
         # Add core nodes
+        workflow.add_node("check_cache", self._check_cache)
         workflow.add_node("analyze_query", self._analyze_query)
-        workflow.add_node("search_pubmed", self._search_pubmed_node)
         workflow.add_node("search_local", self._search_local_node)
+        workflow.add_node("evaluate_confidence", self._evaluate_confidence)
+        workflow.add_node("search_pubmed", self._search_pubmed_node)
         workflow.add_node("synthesize_information", self._synthesize_information)
         workflow.add_node("generate_response", self._generate_response)
         
         # Add helpfulness evaluation nodes
         workflow.add_node("evaluate_helpfulness", self._evaluate_helpfulness)
         workflow.add_node("refine_response", self._refine_response)
+        workflow.add_node("cache_response", self._cache_response)
         workflow.add_node("finalize_response", self._finalize_response)
         
         # Define the flow
-        workflow.set_entry_point("analyze_query")
+        workflow.set_entry_point("check_cache")
         
-        # Core workflow
+        # Cache decision routing
+        workflow.add_conditional_edges(
+            "check_cache",
+            self._route_cache_decision,
+            {
+                "cache_hit": "finalize_response",
+                "cache_miss": "analyze_query"
+            }
+        )
+        
+        # Core workflow - EARLY EXIT OPTIMIZATION
         workflow.add_edge("analyze_query", "search_local")
-        workflow.add_edge("search_local", "search_pubmed")
+        workflow.add_edge("search_local", "evaluate_confidence")
+        
+        # Confidence-based routing for early exit
+        workflow.add_conditional_edges(
+            "evaluate_confidence",
+            self._route_based_on_confidence,
+            {
+                "skip_pubmed": "synthesize_information",  # High confidence - skip PubMed
+                "search_pubmed": "search_pubmed"  # Low confidence - search PubMed
+            }
+        )
+        
         workflow.add_edge("search_pubmed", "synthesize_information")
         workflow.add_edge("synthesize_information", "generate_response")
         workflow.add_edge("generate_response", "evaluate_helpfulness")
         
-        # Helpfulness evaluation conditional routing
+        # Helpfulness evaluation routing
         workflow.add_conditional_edges(
             "evaluate_helpfulness",
             self._route_based_on_helpfulness,
             {
-                "end": "finalize_response",
+                "end": "cache_response",
                 "refine": "refine_response",
-                "max_attempts_reached": "finalize_response"
+                "max_attempts_reached": "cache_response"
             }
         )
         
         # Complete the loop or end
         workflow.add_edge("refine_response", "analyze_query")  # Loop back to start with refined query
+        workflow.add_edge("cache_response", "finalize_response")  # Cache then finalize
         workflow.add_edge("finalize_response", END)  # End the workflow
         
         # Compile the graph
         memory = MemorySaver()
         return workflow.compile(checkpointer=memory)
+    
+    def _check_cache(self, state: AgentState) -> AgentState:
+        """Check if the query is in the cache"""
+        query = state["query"]
+        cache_key = hashlib.sha256(query.encode()).hexdigest()
+        state["cache_key"] = cache_key
+        
+        # Check if we have cached results for this query
+        if cache_key in self._cache:
+            cached_data = self._cache[cache_key]
+            state["cache_hit"] = True
+            state["pubmed_results"] = cached_data.get("pubmed_results", [])
+            state["context"] = cached_data.get("context", "")
+            state["response"] = cached_data.get("response", "")
+            print(f"🎯 Cache hit for query: {query[:50]}...")
+        else:
+            state["cache_hit"] = False
+            print(f"🔍 Cache miss for query: {query[:50]}...")
+        
+        return state
+    
+    def _route_cache_decision(self, state: AgentState) -> str:
+        """Route based on cache hit/miss"""
+        if state["cache_hit"]:
+            return "cache_hit"
+        else:
+            return "cache_miss"
+    
+    def _cache_response(self, state: AgentState) -> AgentState:
+        """Cache the response and related data for future queries"""
+        cache_key = state["cache_key"]
+        
+        # Cache the complete response data
+        cache_data = {
+            "pubmed_results": state.get("pubmed_results", []),
+            "context": state.get("context", ""),
+            "response": state.get("response", ""),
+            "timestamp": time.time()
+        }
+        
+        self._cache[cache_key] = cache_data
+        print(f"💾 Cached response for future queries")
+        
+        return state
     
     def _analyze_query(self, state: AgentState) -> AgentState:
         """Analyze the user query to determine the best approach"""
@@ -438,6 +518,64 @@ class PubMedCrossFitAgent:
         state["local_rag_results"] = results
         return state
     
+    def _evaluate_confidence(self, state: AgentState) -> AgentState:
+        """Evaluate confidence in local results"""
+        local_results = state["local_rag_results"]
+        query = state["query"]
+        
+        # Convert local_results to string and escape curly braces for safe formatting
+        local_results_str = str(local_results)
+        # Escape curly braces to prevent formatting errors
+        local_results_escaped = local_results_str.replace('{', '{{').replace('}', '}}')
+        
+        # Use LLM to evaluate confidence based on query and local results
+        confidence_prompt = ChatPromptTemplate.from_messages([
+            ("system", """
+            Evaluate the confidence in the local results for answering the user's query.
+            Consider:
+            1. Relevance of results to the query
+            2. Completeness of information
+            3. Quality and accuracy of content
+            4. Whether results fully address the query
+            
+            Respond with ONLY a confidence score between 0.0 and 1.0 (e.g., 0.85)
+            """),
+            ("human", f"""
+            User Query: {query}
+            
+            Local Results: {local_results_escaped}
+            
+            Confidence score (0.0-1.0):
+            """)
+        ])
+        
+        try:
+            response = self.llm.invoke(confidence_prompt.format_messages())
+            confidence_score = float(response.content.strip())
+            # Ensure score is within valid range
+            confidence_score = max(0.0, min(1.0, confidence_score))
+        except (ValueError, AttributeError):
+            # Default to low confidence if parsing fails
+            confidence_score = 0.3
+        
+        state["local_confidence"] = confidence_score
+        print(f"🎯 Local confidence score: {confidence_score:.2f}")
+        
+        return state
+    
+    def _route_based_on_confidence(self, state: AgentState) -> str:
+        """Determine next step based on confidence score"""
+        confidence_score = state["local_confidence"]
+        
+        # If high confidence, skip PubMed search
+        if confidence_score >= 0.7:
+            print(f"✅ High confidence ({confidence_score:.2f}) - skipping PubMed search")
+            return "skip_pubmed"
+        
+        # Otherwise, search PubMed
+        print(f"🔍 Low confidence ({confidence_score:.2f}) - searching PubMed")
+        return "search_pubmed"
+    
     def _synthesize_information(self, state: AgentState) -> AgentState:
         """Synthesize information from all sources"""
         pubmed_info = ""
@@ -458,26 +596,55 @@ class PubMedCrossFitAgent:
         return state
     
     def _generate_response(self, state: AgentState) -> AgentState:
-        """Generate the final response based on all gathered information"""
+        """Generate the final response based on all gathered information with quality-aware synthesis"""
         query = state["query"]
         context = state["context"]
         action_type = state["next_action"]
+        context_quality = state.get("context_quality_score", 0.5)
+        pubmed_quality = state.get("pubmed_quality_score", 0.0)
+        local_quality = state.get("local_quality_score", 0.0)
         
-        # Create appropriate prompt based on action type
-        if "workout" in action_type:
-            system_prompt = """
-            You are an expert CrossFit coach. Based on the scientific evidence and local documents provided,
-            help the user adapt their workout. Focus on safety, progression, and evidence-based modifications.
-            """
-        elif "education" in action_type:
-            system_prompt = """
-            You are a fitness educator. Provide comprehensive, accurate educational content based on the
-            scientific evidence and documents provided. Make it accessible and practical.
-            """
+        # Adjust response strategy based on context quality
+        if context_quality >= 0.8:
+            response_strategy = "comprehensive"
+        elif context_quality >= 0.6:
+            response_strategy = "balanced"
         else:
-            system_prompt = """
-            You are an expert CrossFit coach and fitness educator. Provide helpful, evidence-based advice
-            based on the scientific research and local documents provided.
+            response_strategy = "cautious"
+        
+        # Create context-aware prompt
+        system_prompt = f"""
+        You are a CrossFit and fitness expert providing evidence-based guidance.
+        
+        Context Quality Assessment:
+        - Overall Context Quality: {context_quality:.2f}
+        - PubMed Research Quality: {pubmed_quality:.2f}
+        - Local Document Quality: {local_quality:.2f}
+        
+        Response Strategy: {response_strategy}
+        
+        Guidelines based on context quality:
+        - High quality (0.8+): Provide comprehensive, detailed responses
+        - Medium quality (0.6-0.8): Provide balanced responses with appropriate caveats
+        - Low quality (<0.6): Provide cautious responses, acknowledge limitations
+        
+        Always prioritize safety and evidence-based recommendations.
+        """
+        
+        if action_type == "workout":
+            system_prompt += """
+            Focus on creating a safe, effective workout plan.
+            Include proper form cues, progression options, and safety considerations.
+            """
+        elif action_type == "education":
+            system_prompt += """
+            Focus on educational content about CrossFit principles, techniques, and science.
+            Explain concepts clearly and provide actionable insights.
+            """
+        elif action_type == "health":
+            system_prompt += """
+            Focus on health and safety considerations.
+            Provide evidence-based health guidance related to CrossFit and fitness.
             """
         
         prompt = ChatPromptTemplate.from_messages([
@@ -488,30 +655,27 @@ class PubMedCrossFitAgent:
             Available Context:
             {context}
             
-            Please provide a comprehensive, helpful response based on the available evidence.
+            Please provide a helpful, accurate response based on the available information.
+            If context quality is low, acknowledge limitations and suggest seeking additional sources.
             """)
         ])
         
+        # Generate response
         response = self.llm.invoke(prompt.format_messages())
-        
-        # Add the response to messages
-        if "messages" not in state:
-            state["messages"] = []
-        
-        state["messages"].append(HumanMessage(content=query))
-        state["messages"].append(AIMessage(content=response.content))
-        
-        # Store the response in state for helpfulness evaluation
         state["response"] = response.content
         
-        # Initialize helpfulness evaluation fields if not present
-        if "attempt_count" not in state:
-            state["attempt_count"] = 1
-        if "helpfulness_score" not in state:
-            state["helpfulness_score"] = ""
-        if "max_attempts" not in state:
-            state["max_attempts"] = self.max_attempts
-            
+        # Add quality metadata to response
+        quality_info = f"""
+        
+        📊 Response Quality Metrics:
+        - Context Quality: {context_quality:.2f}
+        - PubMed Quality: {pubmed_quality:.2f}
+        - Local Quality: {local_quality:.2f}
+        - Strategy: {response_strategy}
+        """
+        
+        print(f"📝 Generated response with {response_strategy} strategy (quality: {context_quality:.2f})")
+        
         return state
         
     def _evaluate_helpfulness(self, state: AgentState) -> AgentState:
@@ -666,7 +830,13 @@ class PubMedCrossFitAgent:
                 "response": "",
                 "helpfulness_score": "",
                 "attempt_count": 1,
-                "max_attempts": max_attempts
+                "max_attempts": max_attempts,
+                "context_quality_score": 0.5,
+                "pubmed_quality_score": 0.0,
+                "local_quality_score": 0.0,
+                "local_confidence": 0.0,
+                "cache_key": "",
+                "cache_hit": False
             }
             
             # Run the graph
