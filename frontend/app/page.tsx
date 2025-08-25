@@ -424,8 +424,8 @@ export default function Home() {
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-[80vh] pt-8">
                 <div className="text-center space-y-4 max-w-md">
-                  <h1 className="text-4xl font-bold text-neonGreen mb-4">WOD-Wise</h1>
-                  <p className="text-xl text-gray-300 mb-6">Your CrossFit Tr-AI-ning Assistant</p>
+                  <h1 className="text-4xl font-bold text-neonGreen mb-4">WOD-Wise 🕑</h1>
+                  <p className="text-xl text-gray-300 mb-6">Your Tr<span className="text-neonGreen">ai</span>ning Assistant</p>
                   <div className="max-w-md text-gray-400 text-sm mb-6">
                     <p className="mb-4">Ask me anything about CrossFit workouts, techniques, nutrition, or training plans!</p>
                   </div>

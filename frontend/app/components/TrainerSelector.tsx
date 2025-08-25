@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+  import React, { useState, useRef, useEffect } from 'react';
 import { TrophyIcon, AcademicCapIcon, FireIcon } from '@heroicons/react/24/solid';
 
 interface TrainerOption {
@@ -93,7 +93,7 @@ const TrainerSelector: React.FC<TrainerSelectorProps> = ({
   return (
     <div 
       ref={dropdownRef}
-      className="flex items-center space-x-3 bg-black bg-opacity-80 px-5 py-2.5 rounded-lg border border-neonGreen/30 shadow-[0_0_10px_rgba(57,255,20,0.15)] transition-all duration-300 hover:border-neonGreen/40 hover:shadow-[0_0_15px_rgba(57,255,20,0.25)] w-[380px] relative z-30"
+      className="flex items-center space-x-3 bg-black bg-opacity-80 px-5 py-2.5 rounded-lg border border-neonGreen/30 shadow-[0_0_10px_rgba(57,255,20,0.15)] transition-all duration-300 hover:border-neonGreen/40 hover:shadow-[0_0_15px_rgba(57,255,20,0.25)] w-full relative z-30"
     >
       {getTrainerIcon(currentTrainer)}
       <div className="flex flex-col relative w-full text-left">
